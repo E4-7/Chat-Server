@@ -6,6 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import compression from 'compression';
 import { LoggerService } from './modules/logger/logger.service';
+import { RedisIoAdapter } from './redis.adapter';
 
 declare const module: any;
 
@@ -28,7 +29,9 @@ async function bootstrap() {
   });
   app.use(helmet());
   app.use(compression());
-
+  const redisIoAdapter = new RedisIoAdapter(app);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
   await app.listen(PORT);
   logger.log(`server listening on port ${PORT}`);
   if (module.hot) {
