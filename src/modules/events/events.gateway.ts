@@ -9,15 +9,34 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { LoggerService } from '../logger/logger.service';
-
-const onlineMap = {};
+import { EventsService } from './events.service';
+import { EventName } from './constant/event-name.enum';
+import { MessageInterface } from './constant/message.interface';
 
 @WebSocketGateway({ namespace: 'chat' })
 export class EventsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  constructor(private readonly eventsService: EventsService) {}
   @WebSocketServer() public server: Server;
   private readonly logger = new LoggerService(EventsGateway.name);
+
+  @SubscribeMessage(EventName.SEND_MSG_TO_ALL)
+  handleMessageToAll(client: any, payload: MessageInterface) {
+    this.server.to(payload.roomId).emit(EventName.SEND_MSG_TO_ALL, payload);
+  }
+
+  @SubscribeMessage(EventName.SEND_MSG_TO_MANAGER)
+  handleMessageToManager(client: any, payload: MessageInterface) {
+    this.server.to(payload.roomId).emit(EventName.SEND_MSG_TO_MANAGER, payload);
+  }
+
+  @SubscribeMessage(EventName.JOIN_ROOM)
+  handleJoinRoom(client: any, payload: MessageInterface) {
+    client.leave(client.id);
+    client.join(payload.sender);
+    this.eventsService.joinRoom(client, this.server, payload);
+  }
 
   afterInit(server: Server) {
     this.logger.log('websocketserver init');
@@ -25,21 +44,9 @@ export class EventsGateway
 
   handleConnection(@ConnectedSocket() socket: Socket) {
     this.logger.log('connected', socket.nsp.name);
-    if (!onlineMap[socket.nsp.name]) {
-      onlineMap[socket.nsp.name] = {};
-    }
-    socket.emit('hello', socket.nsp.name);
   }
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
-    this.logger.log('disconnected', socket.nsp.name);
-    const newNamespace = socket.nsp;
-    delete onlineMap[socket.nsp.name][socket.id];
-    newNamespace.emit('onlineList', Object.values(onlineMap[socket.nsp.name]));
-  }
-
-  @SubscribeMessage('message')
-  handleMessage(client: any, payload: any): string {
-    return 'Hello world!';
+    this.eventsService.disconnect(socket, this.server);
   }
 }
