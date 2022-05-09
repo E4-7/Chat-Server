@@ -1,4 +1,4 @@
-export interface MessageInterface {
+export interface IMessage {
   sender: string;
   receiver?: string;
   msg: string;

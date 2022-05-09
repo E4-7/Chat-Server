@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { LoggerService } from '../logger/logger.service';
 import { Server, Socket } from 'socket.io';
 import { pubClient as Redis } from '../../redis.adapter';
-import { MessageInterface } from './constant/message.interface';
+import { IMessage } from './constant/message.interface';
 import { EventName } from './constant/event-name.enum';
 import { Exception } from './constant/exception.enum';
 
@@ -10,7 +10,7 @@ import { Exception } from './constant/exception.enum';
 export class EventsService {
   private readonly logger = new LoggerService(EventsService.name);
 
-  joinRoom(client: Socket, server: Server, payload: MessageInterface) {
+  joinRoom(client: Socket, server: Server, payload: IMessage) {
     const { roomId } = payload;
     Redis.get(roomId, (err, data) => {
       if (err)
@@ -38,7 +38,7 @@ export class EventsService {
   updateRoom(
     client: Socket,
     roomDataStringfiedJson: string,
-    payload: MessageInterface,
+    payload: IMessage,
   ) {
     const rawRoomData = JSON.parse(roomDataStringfiedJson);
     rawRoomData.userList[client.id] = payload;
@@ -53,7 +53,7 @@ export class EventsService {
     Redis.set(uuid, JSON.stringify(data));
   }
 
-  createRoom(client: Socket, payload: MessageInterface) {
+  createRoom(client: Socket, payload: IMessage) {
     const newRoom = {
       userList: {},
     };
@@ -76,9 +76,8 @@ export class EventsService {
         if (err || !data)
           return this.emitError({ client, server }, Exception.ROOM_NOT_FOUND);
         const rawRoomData = JSON.parse(data);
-        const personalName = (
-          rawRoomData['userList'][client.id] as MessageInterface
-        ).name;
+        const personalName = (rawRoomData['userList'][client.id] as IMessage)
+          .name;
         for (const userInfo of Object.entries(rawRoomData.userList)) {
           const [key, value]: any = userInfo;
           if (value.name === personalName) {

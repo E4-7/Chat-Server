@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { LoggerService } from '../logger/logger.service';
 import { EventsService } from './events.service';
 import { EventName } from './constant/event-name.enum';
-import { MessageInterface } from './constant/message.interface';
+import { IMessage } from './constant/message.interface';
 
 @WebSocketGateway({ namespace: 'chat' })
 export class EventsGateway
@@ -22,17 +22,17 @@ export class EventsGateway
   private readonly logger = new LoggerService(EventsGateway.name);
 
   @SubscribeMessage(EventName.SEND_MSG_TO_ALL)
-  handleMessageToAll(client: any, payload: MessageInterface) {
+  handleMessageToAll(client: any, payload: IMessage) {
     this.server.to(payload.roomId).emit(EventName.SEND_MSG_TO_ALL, payload);
   }
 
   @SubscribeMessage(EventName.SEND_MSG_TO_MANAGER)
-  handleMessageToManager(client: any, payload: MessageInterface) {
+  handleMessageToManager(client: any, payload: IMessage) {
     this.server.to(payload.roomId).emit(EventName.SEND_MSG_TO_MANAGER, payload);
   }
 
   @SubscribeMessage(EventName.JOIN_ROOM)
-  handleJoinRoom(client: any, payload: MessageInterface) {
+  handleJoinRoom(client: any, payload: IMessage) {
     client.leave(client.id);
     client.join(payload.sender);
     this.eventsService.joinRoom(client, this.server, payload);
