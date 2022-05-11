@@ -1,8 +1,8 @@
 export interface IMessage {
-  sender: string;
+  sender?: string;
   receiver?: string;
-  msg: string;
-  type: MessageType;
+  msg?: string;
+  type?: MessageType;
   name?: string;
   roomId: string;
 }
