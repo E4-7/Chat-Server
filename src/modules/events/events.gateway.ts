@@ -1,5 +1,4 @@
 import {
-  ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
@@ -13,7 +12,7 @@ import { EventsService } from './events.service';
 import { EventName } from './constant/event-name.enum';
 import { IMessage } from './constant/message.interface';
 
-@WebSocketGateway({ namespace: 'chat' })
+@WebSocketGateway({ cors: true, allowEIO3: true })
 export class EventsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -32,9 +31,10 @@ export class EventsGateway
   }
 
   @SubscribeMessage(EventName.JOIN_ROOM)
-  handleJoinRoom(client: any, payload: IMessage) {
-    client.leave(client.id);
-    client.join(payload.sender);
+  async handleJoinRoom(client: any, payload: IMessage) {
+    await client.leave(client.id);
+    await client.join(payload.roomId);
+    this.logger.log(`${client.id} is joined this room!`);
     this.eventsService.joinRoom(client, this.server, payload);
   }
 
@@ -42,11 +42,11 @@ export class EventsGateway
     this.logger.log('websocketserver init');
   }
 
-  handleConnection(@ConnectedSocket() socket: Socket) {
+  handleConnection(socket: Socket) {
     this.logger.log('connected', socket.nsp.name);
   }
 
-  handleDisconnect(@ConnectedSocket() socket: Socket) {
+  handleDisconnect(socket: Socket) {
     this.eventsService.disconnect(socket, this.server);
   }
 }
