@@ -38,6 +38,16 @@ export class EventsGateway
     this.eventsService.joinRoom(client, this.server, payload);
   }
 
+  @SubscribeMessage(EventName.START_ROOM)
+  async handleStartRoom(client: any, payload: IMessage) {
+    this.server.to(payload.roomId).emit(EventName.START_ROOM, payload);
+  }
+
+  @SubscribeMessage(EventName.EXIT_ROOM)
+  async handleExitRoom(client: any, payload: IMessage) {
+    this.server.to(payload.roomId).emit(EventName.EXIT_ROOM, payload);
+  }
+
   afterInit(server: Server) {
     this.logger.log('websocketserver init');
   }
