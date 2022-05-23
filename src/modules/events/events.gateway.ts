@@ -11,12 +11,16 @@ import { LoggerService } from '../logger/logger.service';
 import { EventsService } from './events.service';
 import { EventName } from './constant/event-name.enum';
 import { IMessage } from './constant/message.interface';
+import { HttpService } from '@nestjs/axios';
 
 @WebSocketGateway({ cors: true, allowEIO3: true })
 export class EventsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly httpService: HttpService,
+  ) {}
   @WebSocketServer() public server: Server;
   private readonly logger = new LoggerService(EventsGateway.name);
 
@@ -40,12 +44,30 @@ export class EventsGateway
 
   @SubscribeMessage(EventName.START_ROOM)
   async handleStartRoom(client: any, payload: IMessage) {
-    this.server.to(payload.roomId).emit(EventName.START_ROOM, payload);
+    const EXAMS_STATUS_UPDATE_SERVER_URL =
+      'https://app.e47app.click/api/exams/';
+    try {
+      await this.httpService
+        .post(`${EXAMS_STATUS_UPDATE_SERVER_URL}${payload.roomId}`, {
+          status: 2,
+        })
+        .toPromise();
+      this.server.to(payload.roomId).emit(EventName.START_ROOM, payload);
+    } catch (e) {}
   }
 
   @SubscribeMessage(EventName.EXIT_ROOM)
   async handleExitRoom(client: any, payload: IMessage) {
-    this.server.to(payload.roomId).emit(EventName.EXIT_ROOM, payload);
+    const EXAMS_STATUS_UPDATE_SERVER_URL =
+      'https://app.e47app.click/api/exams/';
+    try {
+      await this.httpService
+        .post(`${EXAMS_STATUS_UPDATE_SERVER_URL}${payload.roomId}`, {
+          status: 3,
+        })
+        .toPromise();
+      this.server.to(payload.roomId).emit(EventName.EXIT_ROOM, payload);
+    } catch (e) {}
   }
 
   afterInit(server: Server) {
