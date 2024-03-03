@@ -30,7 +30,6 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
   const redisIoAdapter = new RedisIoAdapter(app);
-  await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
   await app.listen(PORT);
   logger.log(`server listening on port ${PORT}`);
